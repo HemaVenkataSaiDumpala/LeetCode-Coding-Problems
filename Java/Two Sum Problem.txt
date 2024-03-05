@@ -1,0 +1,42 @@
+class Solution {
+   public int[] twoSum(int[] nums, int target) {
+      
+int length=nums.length;
+   int[] nums1=nums;
+   //System.out.println(length);
+   int[] location= new int[2];
+   for(int i=0;i<length;i++){
+   int expectedtarget=0;
+   for(int j=i+1;j<length;j++){
+
+
+       //location[0]
+       //location[1]='';
+    // if(i!=j){ 
+       expectedtarget=nums[i]+nums1[j];
+       //System.out.println(expectedtarget);
+       //System.out.println(location[0]);
+       //System.out.println(location[1]);
+       if(expectedtarget==target){
+           location[0]=i;
+           location[1]=j;
+           break;
+       }
+    //  }
+   }
+  // if(expectedtarget==target){
+   //  break;
+  // }
+  }
+  return location;
+   }
+}
+
+
+
+
+Link to LeetCode: 
+https://leetcode.com/problems/two-sum/solutions/4825226/two-sum-problem-with-bruteforce-approach
+
+
+
