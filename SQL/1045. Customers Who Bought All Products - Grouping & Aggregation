@@ -1,0 +1,24 @@
+1045. Customers Who Bought All Products. 
+
+Version 1: 
+/* Write your T-SQL query statement below */
+
+with product_count as(
+select customer_id,count(distinct product_key) as p_count from 
+customer 
+group by customer_id),
+intr_tbl as(
+select count(product_key) as cnt from product
+)
+select customer_id from product_count 
+where p_count=(select cnt from intr_tbl)
+
+
+
+Version 2: 
+with product_count as(
+select customer_id,count(distinct product_key) as p_count from
+customer
+group by customer_id)
+select customer_id from product_count
+where p_count=(select count(product_key) as cnt from product); 
