@@ -1,0 +1,478 @@
+Question 1: 
+find-customers-with-positive-revenue-this-year.
+Table: Customers
+
++--------------+------+
+| Column Name  | Type |
++--------------+------+
+| customer_id  | int  |
+| year         | int  |
+| revenue      | int  |
++--------------+------+
+(customer_id, year) is the primary key (combination of columns with unique values) for this table.
+This table contains the customer ID and the revenue of customers in different years.
+Note that this revenue can be negative.
+ 
+
+Write a solution to report the customers with postive revenue in the year 2021.
+
+Return the result table in any order.
+
+The result format is in the following example.
+
+ 
+
+Example 1:
+
+Input: 
+Customers table:
++-------------+------+---------+
+| customer_id | year | revenue |
++-------------+------+---------+
+| 1           | 2018 | 50      |
+| 1           | 2021 | 30      |
+| 1           | 2020 | 70      |
+| 2           | 2021 | -50     |
+| 3           | 2018 | 10      |
+| 3           | 2016 | 50      |
+| 4           | 2021 | 20      |
++-------------+------+---------+
+Output: 
++-------------+
+| customer_id |
++-------------+
+| 1           |
+| 4           |
++-------------+
+Explanation: 
+Customer 1 has revenue equal to 30 in the year 2021.
+Customer 2 has revenue equal to -50 in the year 2021.
+Customer 3 has no revenue in the year 2021.
+Customer 4 has revenue equal to 20 in the year 2021.
+Thus only customers 1 and 4 have positive revenue in the year 2021.
+
+Query: 
+
+SELECT customer_id  FROM Customers as Cust
+WHERE year=2021 and revenue>0
+
+2.
+
+SELECT name as Customers from Customers 
+WHERE id not in ( select customerId from Orders)
+
+Variation 2: 
+Since left join gives us null id from Orders then we can consider those. 
+
+Select name as Customers
+FROM Customers as c 
+left join Orders as o
+on c.id=o.customerId
+where customerId is NULL
+
+3. 
+
+select employee_id,
+    case
+        when employee_id %2 =1 and name  not like 'M%' then salary
+        else 0 
+    end  bonus
+from employees e
+order by employee_id
+
+4. 
+
+with final_table as(SELECT customer_id
+FROM Orders 
+WHERE customer_id not in (select customer_id from orders where product_name='C')
+and product_name='A' or product_name='B'
+GROUP BY customer_id
+HAVING count(distinct product_name)=2)
+
+SELECT C.customer_id,C.customer_name FROM 
+Customers as C 
+inner join final_table as ft
+on C.customer_id=ft.customer_id
+
+Other approach using String_Agg:
+
+with cte_product_list as (
+select customer_id, STRING_AGG(product_name,',') WITHIN GROUP(ORDER BY customer_id) as product_list from Orders
+group by customer_id
+)
+select customer_id,customer_name from Customers
+where customer_id in
+(select customer_id from cte_product_list WHERE product_list like '%A%' and product_list like '%B%' and product_list not like '%C%')
+
+5. 
+
+/* Write your T-SQL query statement below */
+with cte as(SELECT 
+*,ROW_NUMBER() OVER(partition by student_id order by grade desc,course_id asc) as rn
+FROM 
+Enrollments )
+
+select student_id,course_id,grade from cte 
+where rn=1
+
+6. 
+
+7. 
+
+SELECT seller_name FROM Seller
+WHERE seller_id not in(SELECT seller_id
+FROM Orders as O
+WHERE DATEPART(YEAR,sale_date)=2020)
+order by seller_name ASC
+
+variation 2: 
+
+SELECT s.seller_name
+FROM seller as s
+left join orders as o
+on s.seller_id=o.seller_id
+and DATEPART(year,sale_date)=2020
+WHERE o.seller_id is NULL
+order by s.seller_name ASC
+
+
+8. 
+SELECT
+U.name,COALESCE(SUM(R.distance),0) as travelled_distance 
+FROM 
+Users as U 
+left join 
+Rides as R
+on U.id=R.user_id
+GROUP BY U.id,U.name
+order by travelled_distance DESC,U.name ASC
+
+9.
+
+
+10. expression
+
+with final_table as(SELECT left_operand,operator,right_operand,
+CASE 
+    WHEN operator='>' and v.value>v2.value then 'true'
+    WHEN operator='<' and v.value<v2.value then 'true'
+    WHEN operator='=' and v.value=v2.value then 'true'
+    ELSE 'false'
+END as value
+FROM 
+Expressions as ex
+left join Variables as v
+on ex.left_operand=v.name 
+left join Variables as V2
+on ex.right_operand=V2.name)
+
+select * from final_table
+
+Approach 2 with CTE: 
+
+/* Write your T-SQL query statement below */
+with final_table as(SELECT ex.*,v.value as x_value, V2.value as y_value
+FROM 
+Expressions as ex
+left join Variables as v
+on ex.left_operand=v.name 
+left join Variables as V2
+on ex.right_operand=V2.name)
+
+SELECT left_operand,operator,right_operand,
+CASE 
+    WHEN operator='>' and x_value>y_value then 'true'
+    WHEN operator='<' and x_value<y_value then 'true'
+    WHEN operator='=' and x_value=y_value then 'true'
+    ELSE 'false'
+END as value
+FROM final_table 
+
+
+11. 
+with cte as(SELECT
+*,
+CASE 
+    WHEN host_goals > guest_goals then 3
+    WHEN host_goals < guest_goals then 0
+    WHEN host_goals = guest_goals then 1
+    ELSE NULL
+END as host_points, 
+CASE 
+    WHEN guest_goals > host_goals then 3
+    WHEN guest_goals < host_goals then 0
+    WHEN guest_goals = host_goals then 1
+    ELSE NULL
+END as guest_points
+
+FROM Matches as m
+), final_table as(select host_team as team_id,SUM(host_points) as sum_point from cte
+GROUP BY host_team
+UNION ALL
+select guest_team as team_id, SUM(guest_points) as s from cte
+GROUP BY guest_team)
+SELECT t.team_id,t.team_name,COALESCE(SUM(ft.sum_point),0) as num_points
+FROM final_table as ft
+right join Teams as t
+on ft.team_id=t.team_id
+GROUP BY t.team_id,t.team_name
+order by num_points desc, t.team_id asc
+
+
+but this is interesting : 
+
+select t.team_id, t.team_name,
+sum(case
+    when host_team = team_id and host_goals > guest_goals then 3
+    when host_team = team_id and host_goals = guest_goals then 1
+    when guest_team = team_id and guest_goals > host_goals then 3
+    when guest_team = team_id and guest_goals = host_goals then 1
+    else 0
+end) as num_points
+from Teams t
+left join Matches m on t.team_id = m.host_team or t.team_id = m.guest_team
+group by t.team_id, t.team_name
+order by 3 desc, 1 asc
+
+Basic Aggregate Functions: 
+
+1. SELECT user_id,max(time_stamp) as last_stamp
+FROM Logins
+WHERE DATEPART(YEAR,time_stamp)=2020
+GROUP BY user_id
+
+Approach 2:
+
+SELECT 
+    user_id, 
+    MAX(time_stamp) AS last_stamp
+FROM 
+    Logins
+WHERE 
+    YEAR(time_stamp) = 2020
+GROUP BY 1;
+
+or 
+
+
+2. Game Plan Analysis I 
+
+Approach 1: 
+SELECT player_id,min(event_date) as first_login
+FROM
+Activity as A
+GROUP BY player_id
+
+Appraoch 2: 
+with cte as (
+    select *,row_number()over(partition by player_id order by event_date asc)[first_login] from activity
+)
+select player_id,event_date as first_login from cte
+where first_login=1;
+
+
+3. 
+
+
+with prod_v as(SELECT product_id,(Width*Length*Height) as prod_vol
+FROM Products as P)
+
+SELECT W.name as warehouse_name,SUM(units*prod_vol)as volume from Warehouse as W
+left join prod_v as pv
+on W.product_id=pv.product_id
+GROUP BY W.name
+
+
+4. 
+
+SELECT top 1 customer_number
+FROM Orders
+GROUP BY customer_number 
+order by COUNT(order_number) desc
+or 
+SELECT top 1 customer_number
+FROM Orders
+GROUP BY customer_number 
+order by COUNT(*) desc
+
+
+5. 
+
+with CTE as(SELECT delivery_id,customer_id,
+CASE 
+    WHEN order_date=customer_pref_delivery_date then 1
+    ELSE 0
+END as status
+FROM Delivery
+)
+
+select ROUND((((SUM(status)*1.00)/count(status))*100.00),2) as immediate_percentage 
+FROM 
+CTE
+
+or easiest: 
+
+SELECT ROUND(
+    100 * AVG(order_date = customer_pref_delivery_date), 
+    2) AS immediate_percentage
+FROM 
+    Delivery;
+	
+6. Apples and Oranges: 
+
+SELECT S.sale_date,(S.sold_num-S2.sold_num) as diff
+FROM 
+Sales as S
+inner join Sales as S2
+on S.sale_date=S2.sale_date and S.fruit!=S2.fruit
+where S.fruit='apples'
+order by 1
+
+or 
+SELECT S.sale_date,(S.sold_num-S2.sold_num) as diff
+FROM 
+Sales as S
+inner join Sales as S2
+on S.sale_date=S2.sale_date and S.fruit!=S2.fruit
+where S.fruit='apples'
+order by S.sale_date
+
+
+05/02/2025: 
+
+Bank Balance: 
+Select U.name,SUM(amount) as balance
+FROM Users as U
+inner join Transactions as T on
+U.account=T.account
+GROUP BY U.name,T.account
+having SUM(amount)>10000
+
+
+1050.
+
+SELECT actor_id, director_id
+FROM 
+ActorDirector
+GROUP BY actor_id, director_id
+having count(*)>=3
+
+or 
+
+SELECT actor_id, director_id
+FROM ActorDirector
+GROUP BY actor_id, director_id
+HAVING COUNT(timestamp) >= 3;
+
+
+Unique leads, partners: 
+
+SELECT date_id,make_name,COUNT(DISTINCT lead_id) as unique_leads, COUNT(DISTINCT partner_id ) as unique_partners
+FROM 
+DailySales
+GROUP BY date_id,make_name
+
+
+Friendly Movies: 
+
+SELECT
+distinct title
+FROM content as c
+inner join TVProgram as TP
+on C.content_id=TP.content_id
+WHERE C.Kids_content='Y' and DATEPART(MONTH,program_date)=06 and DATEPART(YEAR,program_date)=2020
+and content_type='Movies'
+
+or 
+
+/* Write your T-SQL query statement below */
+
+
+
+SELECT
+distinct title
+FROM content as c
+inner join TVProgram as TP
+on C.content_id=TP.content_id
+WHERE C.Kids_content='Y' and DATEPART(MONTH,program_date)=06 and DATEPART(YEAR,program_date)=2020
+and content_type='Movies'
+
+
+
+STRING, NUMBER, DATE Functions, 
+Regular Expression
+
+
+
+05/03/2025: 
+
+/* Write your T-SQL query statement below */
+with cte as(SELECT 
+p1.*
+FROM 
+Products as P1
+),
+final_table as(SELECT 
+product_id,
+CASE 
+    WHEN store1 is NOT NULL then 'store1'
+    ELSE 'store1'
+END as store, store1 as price
+FROM 
+cte
+UNION 
+SELECT 
+product_id,
+CASE 
+    WHEN store2 is NOT NULL then 'store2'
+    ELSE 'store2'
+END as store, store2 as price
+FROM 
+cte
+UNION 
+SELECT 
+product_id,
+CASE 
+    WHEN store3 is NOT NULL then 'store3'
+    ELSE 'store3'
+END as store, store3 as price
+FROM 
+cte
+)
+
+select * from final_table 
+where price is not null
+
+
+or 
+
+shortest version:
+
+SELECT product_id,store,price
+FROM 
+Products
+UNPIVOT(
+    price for store IN (store1,store2,store3)
+) as unpvt
+
+
+shortest points : 
+
+with t as(SELECT
+ROW_NUMBER() OVER(order by x) as rn,x
+FROM Point)
+
+select min(abs(t1.x-t2.x)) as shortest from t as t1
+inner join t as t2
+on t1.rn!=t2.rn
+
+Little tricky : Becoz the question is unclear. Do We need to consider immediate next point or any points. According to 
+question any point.
+
+or 
+
+select min(abs(t1.x-t2.x)) as shortest from Point as t1
+inner join Point as t2
+on t1.x!=t2.x
+
+: Crazy solution 
